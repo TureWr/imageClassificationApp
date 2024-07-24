@@ -22,6 +22,8 @@ public class MainActivity extends AppCompatActivity {
     Classifier classifier;
     AssetManager assetManager;
     TextView classificationResults;
+    TextView modeTextView;
+    boolean useGpu = false;  // Default to CPU
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -31,15 +33,29 @@ public class MainActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
 
         assetManager = getAssets();
-        classifier = new Classifier(Utils.assetFilePath(this, "mobilenet-v2.pt"));
+        classifier = new Classifier(Utils.assetFilePath(this, "mobilenet-v2.pt"), useGpu);
 
         Button capture = findViewById(R.id.capture);
         classificationResults = findViewById(R.id.classificationResults);
+        modeTextView = findViewById(R.id.modeTextView);
 
         capture.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 classifyImagesInAssets();
+            }
+        });
+
+        Button toggleMode = findViewById(R.id.toggle_mode);
+        toggleMode.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                useGpu = !useGpu;
+                classifier.setUseGpu(useGpu);
+                String mode = useGpu ? "GPU" : "CPU";
+                toggleMode.setText("Use " + (useGpu ? "CPU" : "GPU"));
+                modeTextView.setText("Current Mode: " + mode);
+                Log.d("Toggle Mode", "Switched to " + mode);
             }
         });
     }
@@ -84,15 +100,10 @@ public class MainActivity extends AppCompatActivity {
                         long endTime = System.currentTimeMillis();
                         long duration = endTime - startTime;
                         totalTime += duration;
-
-//                        results.append("Image: ").append(imageName)
-//                                .append(", Prediction: ").append(pred)
-//                                .append(", Time: ").append(duration).append("ms\n");
                     }
                 }
 
                 results.append("Amount of pictures classified: ").append(imageCounter).append("\n");
-
                 results.append("Total time taken: ").append(totalTime).append("ms\n");
 
                 long averageTime = totalTime / imageCounter;
